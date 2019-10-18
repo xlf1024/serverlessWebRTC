@@ -1,0 +1,30 @@
+<html>
+<body>
+<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+<script src="serverlessWebRTC.js"></script>
+<script>
+let netA = new ServerlessRtcNetwork("a");
+let netB = new ServerlessRtcNetwork("b");
+let netC = new ServerlessRtcNetwork("c");
+(async function test(){
+	netA.addEventListener("newPeer", console.log);
+	netB.addEventListener("newPeer", console.log);
+	netC.addEventListener("newPeer", console.log);
+	netA.addEventListener("message", console.log);
+	let temp0 = await netA.createInvite("B");
+	let inviteAB = temp0.invite;
+	let respondAB = temp0.respond;
+	let answerAB = await netB.answerInvite(inviteAB, "A");
+	await respondAB(answerAB);
+	let temp1 = await netB.createInvite("C");
+	let inviteBC = temp1.invite;
+	let respondBC = temp1.respond;
+	let answerBC = await netC.answerInvite(inviteBC, "B");
+	await respondBC(answerBC);
+	setInterval(()=>{
+		netC.sendMessage(Date.now());
+	}, 5000);
+})()
+</script>
+</body>
+</html>
