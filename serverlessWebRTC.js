@@ -3,17 +3,22 @@ class ServerlessRtcNetwork extends EventTarget{
 		super();
 		this.allpeers = {};
 		this.directpeers = {};
+		this.completioncallbacks = {};
 		this.createdpeers = {};
 		this.id = id || createID();
 		this.lastMessageId = 0;
 	}
 	sendMessage(msg, to = -1){
-		this._onmessage({data:JSON.stringify({from: this.id, to:to, content:msg, id: ++this.lastMessageId})});
+		this._sendMessage(msg, to);
+	}
+	_sendMessage(msg, to, control){
+		this._onmessage({data:JSON.stringify({from: this.id, to:to, content:msg, id: ++this.lastMessageId, control:control})});
 	}
 	_onmessage(evt){
 		let message = JSON.parse(evt.data);
 		let {from, to, id} = message;
-		if(!this.allpeers[from]) this.allpeers[from] = {lastMessageId:0};
+		this._discoverPeer(from);
+			console.log(this.id, message);
 		if(this.allpeers[from].lastMessageId < id){
 			this.allpeers[from].lastMessageId = id;
 			for(let peerId in this.directpeers){
@@ -21,9 +26,29 @@ class ServerlessRtcNetwork extends EventTarget{
 				peer.controlChannel.send(JSON.stringify(message))
 			}
 			if(to == this.id || to == -1){
-				this.dispatchEvent(new messageEvent(message));
+				if(message.content){
+					this.dispatchEvent(new messageEvent(message));
+				}
+				if(message.control){
+					switch(message.control.type){
+						case "scan":{
+							this._sendMessage(null,-1,{
+								type:"scanResponse",
+								directpeers:Object.keys(this.directpeers)
+							});
+							break;
+						}
+						case "directInvite":{
+							this._answerConnectToPeer(from, message.control.invite);
+							break;
+						}
+						case "answerDirectInvite":{
+							this._completeConnectToPeer(from, message.control.answer);
+							break;
+						}
+					}
+				}
 			}
-			console.log(message);
 		}
 		
 	}
@@ -43,9 +68,41 @@ class ServerlessRtcNetwork extends EventTarget{
 		let answer = await peer.answerInvite(invite);
 		return answer;
 	}
+	_discoverPeer(id){
+		if(!this.allpeers[id]){
+			this.allpeers[id] = {lastMessageId:0};
+			if(this.id != id){
+				this.dispatchEvent(new newPeerEvent(id));
+				this._connectToPeer(id);
+			}
+		}
+	}
 	async _registerPeer(peer){
 		this.directpeers[peer.id] = peer;
-		this.dispatchEvent(new newPeerEvent(peer.id));
+		this._sendMessage(null, -1, {type:"scan"});
+		this._discoverPeer(peer.id);
+	}
+	async _connectToPeer(id){
+		if(!this.directpeers[id]&&!this.createdpeers[id]&&!this.completioncallbacks[id]){
+			let {respond, invite} = await this.createInvite(id);
+			this.completioncallbacks[id] = respond;
+			this._sendMessage(null,id,{
+				type:"directInvite",
+				invite: invite
+			});
+		}
+	}
+	async _completeConnectToPeer(id, answer){
+		this.completioncallbacks[id](answer);
+	}
+	async _answerConnectToPeer(id, invite){
+		if(!this.directpeers[id]){
+			let answer = await this.answerInvite(invite, id);
+			this._sendMessage(null, id, {
+				type:"answerDirectInvite",
+				answer: answer
+			});
+		}
 	}
 }
 
@@ -82,7 +139,11 @@ class Peer{
 		
 		let respond = (async function(packedRemoteSDP){
 			let remoteSDP = unpackSDP(packedRemoteSDP);
-			await this.rtcConnection.setRemoteDescription(remoteSDP);
+			try{
+				await this.rtcConnection.setRemoteDescription(remoteSDP);
+			}catch(e){
+				debugger;
+			}
 		}).bind(this);
 		
 		this.completeConnection();
@@ -91,7 +152,11 @@ class Peer{
 	}
 	async answerInvite(packedRemoteSDP){
 		let remoteSDP = unpackSDP(packedRemoteSDP);
-		await this.rtcConnection.setRemoteDescription(remoteSDP);
+		try{
+			await this.rtcConnection.setRemoteDescription(remoteSDP);
+		}catch(e){
+			debugger;
+		}
 		let rtcAnswer = await this.rtcConnection.createAnswer();
 		await this.rtcConnection.setLocalDescription(rtcAnswer);
 		await promisePropertyValue(this.rtcConnection, "iceGatheringState", "complete");
@@ -117,7 +182,7 @@ function promisePropertyValue(object, propertyName, value, eventName){
 	if(!eventName) eventName = propertyName.toLowerCase() + "change";
 	return new Promise((resolve, reject) => {
 		checkState = (evt) => {
-			console.log(object, propertyName, value, object[propertyName], evt)
+			//console.log(object, propertyName, value, object[propertyName], evt)
 			if(object[propertyName] == value){
 				resolve(object);
 			}
@@ -133,8 +198,10 @@ function promiseEvent(object, eventName){
 	})
 }
 function packSDP(sdp){
-	return btoa(JSON.stringify(sdp));
+	return sdp;
+	//return btoa(JSON.stringify(sdp));
 }
 function unpackSDP(packedSDP){
-	return JSON.parse(atob(packedSDP));
+	return packedSDP;
+	//return JSON.parse(atob(packedSDP));
 }
