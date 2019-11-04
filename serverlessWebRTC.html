@@ -7,24 +7,37 @@ let netA = new ServerlessRtcNetwork("a");
 let netB = new ServerlessRtcNetwork("b");
 let netC = new ServerlessRtcNetwork("c");
 (async function test(){
-	netA.addEventListener("newPeer", console.log);
-	netB.addEventListener("newPeer", console.log);
-	netC.addEventListener("newPeer", console.log);
-	netA.addEventListener("message", console.log);
+	netA.addEventListener("newPeer", e => console.log("A", e));
+	netB.addEventListener("newPeer", e => console.log("B", e));
+	netC.addEventListener("newPeer", e => console.log("C", e));
+	netA.addEventListener("message", e => console.log("A", e));
+	
 	let temp0 = await netA.createInvite("B");
 	let inviteAB = temp0.invite;
 	let respondAB = temp0.respond;
+	await wait(5000);
 	let answerAB = await netB.answerInvite(inviteAB, "A");
+	await wait(5000);
 	await respondAB(answerAB);
+	
+	await wait(10000);
+	
 	let temp1 = await netB.createInvite("C");
 	let inviteBC = temp1.invite;
 	let respondBC = temp1.respond;
+	await wait(5000);
 	let answerBC = await netC.answerInvite(inviteBC, "B");
+	await wait(5000);
 	await respondBC(answerBC);
+	
 	setInterval(()=>{
-		netC.sendMessage(Date.now());
+		netC.sendMessage(Date.now(), netA.id);
 	}, 5000);
 })()
+
+function wait(time){
+	return new Promise((resolve, reject)=>setTimeout(resolve, time));
+}
 </script>
 </body>
 </html>
