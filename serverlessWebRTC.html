@@ -6,6 +6,7 @@
 let netA = new ServerlessRtcNetwork("a");
 let netB = new ServerlessRtcNetwork("b");
 let netC = new ServerlessRtcNetwork("c");
+let t = 10 * 60 * 1000;
 (async function test(){
 	netA.addEventListener("newPeer", e => console.log("A", e));
 	netB.addEventListener("newPeer", e => console.log("B", e));
@@ -15,19 +16,19 @@ let netC = new ServerlessRtcNetwork("c");
 	let temp0 = await netA.createInvite("B");
 	let inviteAB = temp0.invite;
 	let respondAB = temp0.respond;
-	await wait(5000);
+	await wait(t);
 	let answerAB = await netB.answerInvite(inviteAB, "A");
-	await wait(5000);
+	await wait(t);
 	await respondAB(answerAB);
 	
-	await wait(10000);
+	await wait(t);
 	
 	let temp1 = await netB.createInvite("C");
 	let inviteBC = temp1.invite;
 	let respondBC = temp1.respond;
-	await wait(5000);
+	await wait(t);
 	let answerBC = await netC.answerInvite(inviteBC, "B");
-	await wait(5000);
+	await wait(t);
 	await respondBC(answerBC);
 	
 	setInterval(()=>{

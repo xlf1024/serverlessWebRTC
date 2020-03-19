@@ -182,7 +182,7 @@ function promisePropertyValue(object, propertyName, value, eventName){
 	if(!eventName) eventName = propertyName.toLowerCase() + "change";
 	return new Promise((resolve, reject) => {
 		checkState = (evt) => {
-			//console.log(object, propertyName, value, object[propertyName], evt)
+			console.log(object, propertyName, value, object[propertyName], evt)
 			if(object[propertyName] == value){
 				resolve(object);
 			}
