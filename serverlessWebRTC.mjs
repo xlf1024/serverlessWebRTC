@@ -1,4 +1,4 @@
-class ServerlessRtcNetwork extends EventTarget{
+export default class ServerlessRtcNetwork extends EventTarget{
 	constructor(id){
 		super();
 		this.allpeers = {};
@@ -122,7 +122,7 @@ function createID(){
 	return Math.ceil(Math.random() * Number.MAX_SAFE_INTEGER);
 }
 
-class Peer{
+export class Peer{
 	constructor(network, id){
 		this.network = network;
 		this.id = id;
@@ -198,10 +198,10 @@ function promiseEvent(object, eventName){
 	})
 }
 function packSDP(sdp){
-	return sdp;
-	//return btoa(JSON.stringify(sdp));
+	//return sdp;
+	return btoa(JSON.stringify(sdp));
 }
 function unpackSDP(packedSDP){
-	return packedSDP;
-	//return JSON.parse(atob(packedSDP));
+	//return packedSDP;
+	return JSON.parse(atob(packedSDP));
 }
