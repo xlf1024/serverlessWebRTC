@@ -1,0 +1,19 @@
+{
+  "name": "serverlesswebrtc",
+  "version": "0.0.1",
+  "description": "Library tfor out-of-band WebRTC connecting and message routing. Planned features: Compressed connection keys, media stream and file transfer support.\u001e",
+  "main": "serverlessWebRTC.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xlf1024/serverlessWebRTC.git"
+  },
+  "author": "xlf1024",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/xlf1024/serverlessWebRTC/issues"
+  },
+  "homepage": "https://github.com/xlf1024/serverlessWebRTC#readme"
+}
