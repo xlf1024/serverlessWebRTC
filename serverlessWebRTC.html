@@ -1,8 +1,8 @@
 <html>
 <body>
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
-<script src="serverlessWebRTC.js"></script>
-<script>
+<script type="module">
+import ServerlessRtcNetwork from "./serverlessWebRTC.mjs";
 let netA = new ServerlessRtcNetwork("a");
 let netB = new ServerlessRtcNetwork("b");
 let netC = new ServerlessRtcNetwork("c");

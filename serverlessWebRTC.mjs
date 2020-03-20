@@ -1,3 +1,5 @@
+import {encode, decode} from "./node_modules/chunkedbase/chunkedbase.mjs";
+
 export default class ServerlessRtcNetwork extends EventTarget{
 	constructor(id){
 		super();
@@ -181,7 +183,7 @@ export class Peer{
 function promisePropertyValue(object, propertyName, value, eventName){
 	if(!eventName) eventName = propertyName.toLowerCase() + "change";
 	return new Promise((resolve, reject) => {
-		checkState = (evt) => {
+		let checkState = (evt) => {
 			console.log(object, propertyName, value, object[propertyName], evt)
 			if(object[propertyName] == value){
 				resolve(object);
@@ -197,11 +199,13 @@ function promiseEvent(object, eventName){
 		object.addEventListener(eventName, resolve, {once:true});
 	})
 }
+const alphabet = "23456789ABCDEFGHKLMNPQRSTUVWXYZabcdefghkmnpqrstuvwxyz";
+const chunkSize = 4;
 function packSDP(sdp){
 	//return sdp;
-	return btoa(JSON.stringify(sdp));
+	return encode(JSON.stringify(sdp), alphabet, chunkSize);
 }
 function unpackSDP(packedSDP){
 	//return packedSDP;
-	return JSON.parse(atob(packedSDP));
+	return JSON.parse(decode(packedSDP, alphabet, chunkSize, "string"));
 }
